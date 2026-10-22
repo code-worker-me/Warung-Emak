@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pos_app.ui.cashier.CashierScreen
 import com.example.pos_app.ui.home.HomeScreen
 import com.example.pos_app.ui.stock.AddProductScreen
+import com.example.pos_app.ui.stock.EditProductScreen
 import com.example.pos_app.ui.stock.StockScreen
 import com.example.pos_app.ui.viewmodel.PosViewModel
 
@@ -47,6 +48,8 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
                 },
                 onEditClicked = { product ->
                     // Navigasi ke halaman edit produk
+                    viewModel.selectProductForEdit(product)
+                    navController.navigate("edit_product")
                 },
                 onDeleteBatch = { idsList ->
                     idsList.forEach { id ->
@@ -65,6 +68,19 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
                 // Panggil logika dari ViewModel
                 viewModel.addProduct(name, price, quantity, category, imageUri)
                 navController.popBackStack() // Kembali ke halaman stock setelah disimpan
+            }
+        }
+        composable("edit_product") {
+            val productToEdit = viewModel.selectedProduct.collectAsState().value
+            if (productToEdit != null) {
+                EditProductScreen(
+                    product = productToEdit,
+                    onBackClicked = { navController.popBackStack() },
+                    onUpdateProduct = { updatedProduct ->
+                        viewModel.updateProduct(updatedProduct)
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

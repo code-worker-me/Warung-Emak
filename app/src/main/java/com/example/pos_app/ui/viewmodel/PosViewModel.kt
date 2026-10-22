@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.pos_app.data.local.AppDatabase
 import com.example.pos_app.data.local.ProductEntity
 import com.example.pos_app.data.repository.ProductRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -56,6 +58,13 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.update(product)
         }
+    }
+
+    private val _selectedProduct = MutableStateFlow<ProductEntity?>(null)
+    val selectedProduct: StateFlow<ProductEntity?> = _selectedProduct.asStateFlow()
+
+    fun selectProductForEdit(product: ProductEntity) {
+        _selectedProduct.value = product
     }
 
     fun deleteProduct(ids: List<Int>) {
