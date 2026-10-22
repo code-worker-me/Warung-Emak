@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class PosViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: ProductRepository
@@ -35,6 +36,29 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = 0.0
+    )
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    val filteredProducts: StateFlow<List<ProductEntity>> = kotlinx.coroutines.flow.combine(products, _searchQuery) { list, query ->
+        val sortedList = list.sortedBy { it.name.lowercase(Locale.getDefault()) }
+        if (query.isBlank()) {
+            sortedList
+        } else {
+            sortedList.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                        it.category.contains(query, ignoreCase = true)
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
     )
 
     fun addProduct(name: String, price: Double, buyPrice: Double, quantity: Int, category: String, imageUrl: String?) {

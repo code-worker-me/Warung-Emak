@@ -26,6 +26,8 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
     val navController = rememberNavController()
     val products by viewModel.products.collectAsState()
     val totalProfit by viewModel.totalProfit.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val filteredProducts by viewModel.filteredProducts.collectAsState()
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) {
@@ -40,24 +42,17 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
         }
         composable(Screen.Stock.route) {
             StockScreen(
-                productList = products,
+                productList = filteredProducts,
+                searchQuery = searchQuery,
+                onSearchQueryChanged = { viewModel.setSearchQuery(it) },
                 onBackClicked = { navController.popBackStack() },
-                onAddClicked = {
-                    // Navigasi ke halaman tambah produk
-                    navController.navigate("add_product")
-                },
+                onAddClicked = { navController.navigate("add_product") },
                 onEditClicked = { product ->
-                    // Navigasi ke halaman edit produk
                     viewModel.selectProductForEdit(product)
                     navController.navigate("edit_product")
                 },
                 onDeleteBatch = { idsList ->
-                    idsList.forEach { id ->
-                        val target = products.find { it.id == id }
-                        if (target != null) {
-                            viewModel.deleteProduct(listOf(target.id))
-                        }
-                    }
+                    viewModel.deleteProduct(idsList)
                 }
             )
         }

@@ -35,6 +35,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -62,6 +64,8 @@ import com.example.pos_app.data.local.ProductEntity
 @Composable
 fun StockScreen(
     productList: List<ProductEntity>,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
     onAddClicked: () -> Unit,
     onBackClicked: () -> Unit,
     onEditClicked: (ProductEntity) -> Unit,
@@ -120,74 +124,101 @@ fun StockScreen(
                 }
             }
         }
-    ) { padding ->
-        if (productList.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChanged,
+                label = { Text("Cari produk") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = { onSearchQueryChanged("") }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                        }
+                    }
+                }
+            )
+
+            if (productList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Belum ada produk",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Button(onClick = onAddClicked) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Tambah Produk")
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = if (searchQuery.isNotBlank()) "Produk tidak ditemukan" else "Belum ada produk",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (searchQuery.isBlank()) {
+                            Button(onClick = onAddClicked) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Tambah Produk")
+                            }
+                        }
+                    }
+                }
+            } else {
+                // LazyColumn daftar produk
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(productList) { product ->
+                        val isSelected = selectedProductIds.contains(product.id)
+
+                        // panggil fungsi SelectableProductCard
+                        SelectableProductCard(
+                            product = product,
+                            isSelected = isSelected,
+                            onLongClick = {
+                                // Long click untuk mulai memilih atau menambah pilihan
+                                selectedProductIds = if (isSelected) {
+                                    selectedProductIds - product.id
+                                } else {
+                                    selectedProductIds + product.id
+                                }
+                            },
+                            onClick = {
+                                if (isSelectionMode) {
+                                    // Jika sudah dalam mode seleksi, klik biasa berfungsi untuk toggle pilih/batal pilih
+                                    selectedProductIds = if (isSelected) {
+                                        selectedProductIds - product.id
+                                    } else {
+                                        selectedProductIds + product.id
+                                    }
+                                } else {
+                                    // Jika tidak dalam mode seleksi, jalankan fungsi edit
+                                    onEditClicked(product)
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
                     }
                 }
             }
-        } else {
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(productList) { product ->
-                val isSelected = selectedProductIds.contains(product.id)
-
-                // panggil fungsi SelectableProductCard
-                SelectableProductCard(
-                    product = product,
-                    isSelected = isSelected,
-                    onLongClick = {
-                        // Long click untuk mulai memilih atau menambah pilihan
-                        selectedProductIds = if (isSelected) {
-                            selectedProductIds - product.id
-                        } else {
-                            selectedProductIds + product.id
-                        }
-                    },
-                    onClick = {
-                        if (isSelectionMode) {
-                            // Jika sudah dalam mode seleksi, klik biasa berfungsi untuk toggle pilih/batal pilih
-                            selectedProductIds = if (isSelected) {
-                                selectedProductIds - product.id
-                            } else {
-                                selectedProductIds + product.id
-                            }
-                        } else {
-                            // Jika tidak dalam mode seleksi, jalankan fungsi edit
-                            onEditClicked(product)
-                        }
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                )
-            }
-        }
         }
     }
 
