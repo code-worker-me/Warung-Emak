@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,7 +51,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.pos_app.R
 import com.example.pos_app.data.local.ProductEntity
@@ -65,6 +69,9 @@ fun StockScreen(
 ) {
     var selectedProductIds by remember { mutableStateOf(setOf<Int>()) }
     val isSelectionMode = selectedProductIds.isNotEmpty()
+
+    // State untuk mengontrol tampilnya dialog konfirmasi hapus
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -97,8 +104,7 @@ fun StockScreen(
                 if (isSelectionMode) {
                     FloatingActionButton(
                         onClick = {
-                            onDeleteBatch(selectedProductIds.toList())
-                            selectedProductIds = emptySet()
+                            showDeleteDialog = true
                         },
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -107,7 +113,7 @@ fun StockScreen(
                     }
                 }
 
-                if (productList.isNotEmpty()) {
+                if (productList.isNotEmpty() && !isSelectionMode) {
                     FloatingActionButton(onClick = onAddClicked) {
                         Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
                     }
@@ -184,6 +190,32 @@ fun StockScreen(
         }
         }
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Konfirmasi Hapus") },
+            text = { Text("Apakah Anda yakin ingin menghapus ${selectedProductIds.size} produk terpilih?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteBatch(selectedProductIds.toList())
+                        selectedProductIds = emptySet() // Reset seleksi setelah dihapus
+                    }
+                ) {
+                    Text("Ya", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text("Tidak")
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -246,21 +278,28 @@ fun SelectableProductCard(
             ) {
                 Text(
                     text = product.name,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Light
+                )
+                // Harga di posisi paling kanan
+                Text(
+                    text = "Rp. ${String.format("%,.0f", product.price)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF124D1C),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "Stok: ${product.quantity}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFFB7B09E),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
 
-            // Harga di posisi paling kanan
-            Text(
-                text = "Rp ${String.format("%,.0f", product.price)}",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Icon(Icons.Default.Edit, contentDescription = "edit icon")
         }
     }
 }
