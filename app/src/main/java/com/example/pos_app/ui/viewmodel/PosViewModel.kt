@@ -28,16 +28,27 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         )
 
     val totalProfit: StateFlow<Double> = products.map { list ->
-        list.sumOf { (it.price * it.quantity) * 0.2}
+        list.sumOf { (it.price * it.quantity) * 0.2 }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = 0.0
     )
 
-    fun addProduct(name: String, imageUrl: String?, price: Double, quantity: Int, category: String, expiredDate: String?) {
+    fun addProduct(name: String, price: Double, quantity: Int, category: String, imageUrl: String?) {
+        if (name.isBlank() || price <= 0 || quantity < 0) return // Validasi sederhana
+
         viewModelScope.launch {
-            repository.insert(ProductEntity(name = name, imageUrl = imageUrl, price = price, quantity = quantity, category = category, expiredDate = expiredDate))
+            repository.insert(
+                ProductEntity(
+                    name = name,
+                    price = price,
+                    quantity = quantity,
+                    category = category,
+                    imageUrl = imageUrl,
+                    expiredDate = null
+                )
+            )
         }
     }
 
@@ -47,9 +58,12 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun deleteProduct(product: ProductEntity) {
+    fun deleteProduct(ids: List<Int>) {
         viewModelScope.launch {
-            repository.delete(product)
+            ids.forEach { id ->
+                val productToDelete = products.value.find { it.id == id }
+                productToDelete?.let { repository.delete(it) }
+            }
         }
     }
 }

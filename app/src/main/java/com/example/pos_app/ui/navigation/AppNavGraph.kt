@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pos_app.ui.cashier.CashierScreen
 import com.example.pos_app.ui.home.HomeScreen
+import com.example.pos_app.ui.stock.AddProductScreen
 import com.example.pos_app.ui.stock.StockScreen
 import com.example.pos_app.ui.viewmodel.PosViewModel
 
@@ -41,23 +42,30 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
                 productList = products,
                 onBackClicked = { navController.popBackStack() },
                 onAddClicked = {
-                    // Contoh quick insert data dummy untuk testing CRUD
-                    viewModel.addProduct(
-                        name = "Produk Baru",
-                        imageUrl = null,
-                        price = 10000.0,
-                        quantity = 50,
-                        category = "Umum",
-                        expiredDate = "2027-12-31"
-                    )
+                    // Navigasi ke halaman tambah produk
+                    navController.navigate("add_product")
                 },
                 onEditClicked = { product ->
-                    viewModel.updateProduct(product.copy(quantity = product.quantity + 10))
+                    // Navigasi ke halaman edit produk
                 },
-                onDeleteClicked = { product ->
-                    viewModel.deleteProduct(product)
+                onDeleteBatch = { idsList ->
+                    idsList.forEach { id ->
+                        val target = products.find { it.id == id }
+                        if (target != null) {
+                            viewModel.deleteProduct(listOf(target.id))
+                        }
+                    }
                 }
             )
+        }
+        composable("add_product") {
+            AddProductScreen(
+                onBackClicked = { navController.popBackStack() },
+            ) { name, price, quantity, category, imageUri ->
+                // Panggil logika dari ViewModel
+                viewModel.addProduct(name, price, quantity, category, imageUri)
+                navController.popBackStack() // Kembali ke halaman stock setelah disimpan
+            }
         }
     }
 }
