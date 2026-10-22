@@ -1,7 +1,6 @@
 package com.example.pos_app.ui.cashier
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.pos_app.data.local.ProductEntity
@@ -72,12 +72,14 @@ fun CashierScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             AsyncImage(
-                                model = product.imageUrl ?: "https://via.placeholder.com/150",
+                                model = product.imageUrl?.takeIf { it.isNotBlank() },
                                 contentDescription = product.name,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(90.dp),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = android.R.drawable.ic_menu_gallery), // Gambar bawaan Android saat loading
+                                error = painterResource(id = android.R.drawable.ic_menu_report_image) // Gambar bawaan saat URL kosong/error
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = product.name, style = MaterialTheme.typography.titleMedium)

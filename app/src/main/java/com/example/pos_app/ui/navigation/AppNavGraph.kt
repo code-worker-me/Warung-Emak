@@ -39,6 +39,7 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
         composable(Screen.Stock.route) {
             StockScreen(
                 productList = products,
+                onBackClicked = { navController.popBackStack() },
                 onAddClicked = {
                     // Contoh quick insert data dummy untuk testing CRUD
                     viewModel.addProduct(
