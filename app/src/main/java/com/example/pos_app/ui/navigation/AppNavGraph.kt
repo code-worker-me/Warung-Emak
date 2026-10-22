@@ -45,6 +45,7 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
                 productList = filteredProducts,
                 searchQuery = searchQuery,
                 onSearchQueryChanged = { viewModel.setSearchQuery(it) },
+                onSortSelected = { order -> viewModel.setSortOrder(order) },
                 onBackClicked = { navController.popBackStack() },
                 onAddClicked = { navController.navigate("add_product") },
                 onEditClicked = { product ->

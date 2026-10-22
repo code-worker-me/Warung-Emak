@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,11 +26,17 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -59,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.pos_app.R
 import com.example.pos_app.data.local.ProductEntity
+import com.example.pos_app.ui.viewmodel.PosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +74,7 @@ fun StockScreen(
     productList: List<ProductEntity>,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
+    onSortSelected: (PosViewModel.SortOrder) -> Unit,
     onAddClicked: () -> Unit,
     onBackClicked: () -> Unit,
     onEditClicked: (ProductEntity) -> Unit,
@@ -73,16 +82,26 @@ fun StockScreen(
 ) {
     var selectedProductIds by remember { mutableStateOf(setOf<Int>()) }
     val isSelectionMode = selectedProductIds.isNotEmpty()
-
     // State untuk mengontrol tampilnya dialog konfirmasi hapus
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
+
+    var selectedCategory by remember { mutableStateOf("Semua") }
+    val categories = remember(productList) {
+        listOf("Semua") + productList.map { it.category }.filter { it.isNotBlank() }.distinct()
+    }
+
+    val displayedProducts = remember(productList, selectedCategory) {
+        if (selectedCategory == "Semua") productList
+        else productList.filter { it.category == selectedCategory }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(if (isSelectionMode) "${selectedProductIds.size} dipilih" else stringResource(
-                        R.string.atur_stock
+                        R.string.atur_stok
                     ))
                 },
                 navigationIcon = {
@@ -117,7 +136,7 @@ fun StockScreen(
                     }
                 }
 
-                if (productList.isNotEmpty() && !isSelectionMode) {
+                if (displayedProducts.isNotEmpty() && !isSelectionMode) {
                     FloatingActionButton(onClick = onAddClicked) {
                         Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
                     }
@@ -132,23 +151,88 @@ fun StockScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChanged,
-                label = { Text("Cari produk") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
-                        IconButton(onClick = { onSearchQueryChanged("") }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChanged,
+                    label = { Text("Cari produk") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { onSearchQueryChanged("") }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
                         }
                     }
-                }
-            )
+                )
 
-            if (productList.isEmpty()) {
+                Box {
+                    IconButton(
+                        onClick = { showSortMenu = true },
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    ) {
+                        Icon(Icons.Default.Menu, contentDescription = "Sort Stok")
+                    }
+
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Default") },
+                            onClick = {
+                                onSortSelected(PosViewModel.SortOrder.NONE)
+                                showSortMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Stok Terbanyak") },
+                            onClick = {
+                                onSortSelected(PosViewModel.SortOrder.HIGHEST_STOCK)
+                                showSortMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Stok Tersedikit") },
+                            onClick = {
+                                onSortSelected(PosViewModel.SortOrder.LOWEST_STOCK)
+                                showSortMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.KeyboardArrowUp, contentDescription = null)
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (categories.size > 1) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    items(categories) { category ->
+                        FilterChip(
+                            selected = selectedCategory == category,
+                            onClick = { selectedCategory = category },
+                            label = { Text(category) }
+                        )
+                    }
+                }
+            }
+
+            if (displayedProducts.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -160,11 +244,11 @@ fun StockScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = if (searchQuery.isNotBlank()) "Produk tidak ditemukan" else "Belum ada produk",
+                            text = if (searchQuery.isNotBlank() || selectedCategory != "Semua") "Produk tidak ditemukan" else "Belum ada produk",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (searchQuery.isBlank()) {
+                        if (searchQuery.isBlank() && selectedCategory == "Semua") {
                             Button(onClick = onAddClicked) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -181,7 +265,7 @@ fun StockScreen(
                         .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(productList) { product ->
+                    items(displayedProducts) { product ->
                         val isSelected = selectedProductIds.contains(product.id)
 
                         // panggil fungsi SelectableProductCard

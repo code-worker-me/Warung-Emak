@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,22 +39,34 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = 0.0
     )
 
+    enum class SortOrder { NONE, HIGHEST_STOCK, LOWEST_STOCK }
+    private val _sortOrder = MutableStateFlow(SortOrder.NONE)
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
 
-    val filteredProducts: StateFlow<List<ProductEntity>> = kotlinx.coroutines.flow.combine(products, _searchQuery) { list, query ->
-        val sortedList = list.sortedBy { it.name.lowercase(Locale.getDefault()) }
-        if (query.isBlank()) {
-            sortedList
+    fun setSortOrder(order: SortOrder) {
+        _sortOrder.value = order
+    }
+
+    val filteredProducts: StateFlow<List<ProductEntity>> = combine(products, _searchQuery, _sortOrder) { list, query, sort ->
+        val filtered = if (query.isBlank()) {
+            list
         } else {
-            sortedList.filter {
+            list.filter {
                 it.name.contains(query, ignoreCase = true) ||
                         it.category.contains(query, ignoreCase = true)
             }
+        }
+
+        when (sort) {
+            SortOrder.HIGHEST_STOCK -> filtered.sortedByDescending { it.quantity }
+            SortOrder.LOWEST_STOCK -> filtered.sortedBy { it.quantity }
+            SortOrder.NONE -> filtered
         }
     }.stateIn(
         scope = viewModelScope,

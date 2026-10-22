@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">POS-App</string>
-    <string name="atur_stock">Atur Stock</string>
+    <string name="app_name">Point of Sales</string>
+    <string name="atur_stok">Atur Stok</string>
     <string name="tambah_produk">Tambah Produk</string>
 </resources>
