@@ -30,14 +30,14 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         )
 
     val totalProfit: StateFlow<Double> = products.map { list ->
-        list.sumOf { (it.price * it.quantity) * 0.2 }
+        list.sumOf { (it.price - it.buyPrice) * it.quantity }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = 0.0
     )
 
-    fun addProduct(name: String, price: Double, quantity: Int, category: String, imageUrl: String?) {
+    fun addProduct(name: String, price: Double, buyPrice: Double, quantity: Int, category: String, imageUrl: String?) {
         if (name.isBlank() || price <= 0 || quantity < 0) return // Validasi sederhana
 
         viewModelScope.launch {
@@ -45,6 +45,7 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
                 ProductEntity(
                     name = name,
                     price = price,
+                    buyPrice = buyPrice,
                     quantity = quantity,
                     category = category,
                     imageUrl = imageUrl,

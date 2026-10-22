@@ -76,12 +76,20 @@ fun EditProductScreen(
         ""
     }
 
+    val initialBuyPriceStr = if (product.buyPrice > 0) {
+        NumberFormat.getInstance(Locale("id", "ID")).format(product.buyPrice.toLong())
+    } else {
+        ""
+    }
+
     var price by remember { mutableStateOf(initialPriceStr) }
+    var buyPrice by remember { mutableStateOf(initialBuyPriceStr) }
     var stock by remember { mutableStateOf(product.quantity.toString()) }
     var category by remember { mutableStateOf(product.category) }
     var imageUri by remember { mutableStateOf(product.imageUrl?.let { Uri.parse(it) }) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
 
+    val focusRequesterBuyPrice = remember { FocusRequester() }
     val focusRequesterPrice = remember { FocusRequester() }
     val focusRequesterStock = remember { FocusRequester() }
     val focusRequesterCategory = remember { FocusRequester() }
@@ -164,12 +172,33 @@ fun EditProductScreen(
                 label = { Text("Nama Produk") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusRequesterBuyPrice.requestFocus() }),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            // Input Harga Beli
+            OutlinedTextField(
+                value = buyPrice,
+                onValueChange = { inputStr ->
+                    val clean = inputStr.replace(Regex("[^\\d]"), "")
+                    buyPrice = if (clean.isNotEmpty()) {
+                        NumberFormat.getInstance(Locale("id", "ID")).format(clean.toLongOrNull() ?: 0L)
+                    } else {
+                        ""
+                    }
+                },
+                label = { Text("Harga Beli") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequesterBuyPrice),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusRequesterPrice.requestFocus() }),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // Input Harga
+            // Input Harga Jual
             OutlinedTextField(
                 value = price,
                 onValueChange = { inputStr ->
@@ -181,7 +210,7 @@ fun EditProductScreen(
                         ""
                     }
                 },
-                label = { Text("Harga") },
+                label = { Text("Harga Jual") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequesterPrice),
@@ -232,6 +261,9 @@ fun EditProductScreen(
 
             Button(
                 onClick = {
+                    val cleanBuyPrice = buyPrice.replace(Regex("[^\\d]"), "")
+                    val parsedBuyPrice = cleanBuyPrice.toDoubleOrNull() ?: 0.0
+
                     val cleanPrice = price.replace(Regex("[^\\d]"), "")
                     val parsedPrice = cleanPrice.toDoubleOrNull() ?: 0.0
                     val parsedStock = stock.toIntOrNull() ?: 0
@@ -239,6 +271,7 @@ fun EditProductScreen(
                     val updatedProduct = product.copy(
                         name = name,
                         price = parsedPrice,
+                        buyPrice = parsedBuyPrice,
                         quantity = parsedStock,
                         category = category,
                         imageUrl = imageUri?.toString()

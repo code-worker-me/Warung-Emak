@@ -64,9 +64,9 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
         composable("add_product") {
             AddProductScreen(
                 onBackClicked = { navController.popBackStack() },
-            ) { name, price, quantity, category, imageUri ->
+            ) { name, price, buyPrice, quantity, category, imageUri ->
                 // Panggil logika dari ViewModel
-                viewModel.addProduct(name, price, quantity, category, imageUri)
+                viewModel.addProduct(name, price, buyPrice, quantity, category, imageUri)
                 navController.popBackStack() // Kembali ke halaman stock setelah disimpan
             }
         }
