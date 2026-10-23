@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -36,7 +35,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TopAppBar
+import com.example.pos_app.data.entity.CategoryEntity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,12 +54,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.pos_app.data.local.ProductEntity
+import com.example.pos_app.data.entity.ProductEntity
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -64,6 +66,7 @@ import java.util.Locale
 @Composable
 fun EditProductScreen(
     product: ProductEntity,
+    categoryList: List<CategoryEntity>,
     onBackClicked: () -> Unit,
     onUpdateProduct: (ProductEntity) -> Unit
 ) {
@@ -93,7 +96,6 @@ fun EditProductScreen(
     val focusRequesterPrice = remember { FocusRequester() }
     val focusRequesterStock = remember { FocusRequester() }
     val focusRequesterCategory = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
     // Launcher untuk Galeri
@@ -243,18 +245,47 @@ fun EditProductScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("Kategori") },
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequesterCategory),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
+                var expanded by remember { mutableStateOf(false) }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = category,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Kategori") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                            .focusRequester(focusRequesterCategory),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        if (categoryList.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("Belum ada kategori") },
+                                onClick = { expanded = false }
+                            )
+                        } else {
+                            categoryList.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(cat.name) },
+                                    onClick = {
+                                        category = cat.name
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

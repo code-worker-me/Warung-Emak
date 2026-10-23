@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,8 +30,10 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -55,7 +58,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -65,30 +67,35 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.pos_app.R
-import com.example.pos_app.data.local.ProductEntity
+import com.example.pos_app.data.entity.CategoryEntity
+import com.example.pos_app.data.entity.ProductEntity
 import com.example.pos_app.ui.viewmodel.PosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockScreen(
     productList: List<ProductEntity>,
+    categoryList: List<CategoryEntity>,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
     onSortSelected: (PosViewModel.SortOrder) -> Unit,
     onAddClicked: () -> Unit,
     onBackClicked: () -> Unit,
     onEditClicked: (ProductEntity) -> Unit,
-    onDeleteBatch: (List<Int>) -> Unit
+    onDeleteBatch: (List<Int>) -> Unit,
+    onAddCategory: (String) -> Unit,
+    onDeleteCategory: (CategoryEntity) -> Unit
 ) {
     var selectedProductIds by remember { mutableStateOf(setOf<Int>()) }
     val isSelectionMode = selectedProductIds.isNotEmpty()
     // State untuk mengontrol tampilnya dialog konfirmasi hapus
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
 
     var selectedCategory by remember { mutableStateOf("Semua") }
-    val categories = remember(productList) {
-        listOf("Semua") + productList.map { it.category }.filter { it.isNotBlank() }.distinct()
+    val categories = remember(categoryList) {
+        listOf("Semua") + categoryList.map { it.name }
     }
 
     val displayedProducts = remember(productList, selectedCategory) {
@@ -216,21 +223,39 @@ fun StockScreen(
                     }
                 }
             }
-
-            if (categories.size > 1) {
-                LazyRow(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(categories) { category ->
-                        FilterChip(
-                            selected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
-                            label = { Text(category) }
+                    // Tombol Pengaturan Kategori di sebelah kanan
+                    IconButton(
+                        onClick = { showCategoryDialog = true },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Pengaturan Kategori"
                         )
                     }
+                    Spacer(Modifier.width(10.dp))
+                    // LazyRow Kategori (diberi weight(1f) agar mengambil ruang fleksibel di kiri)
+                    LazyRow(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        items(categories) { category ->
+                            FilterChip(
+                                selected = selectedCategory == category,
+                                onClick = { selectedCategory = category },
+                                label = { Text(category) }
+                            )
+                        }
+                    }
                 }
-            }
 
             if (displayedProducts.isEmpty()) {
                 Box(
@@ -331,6 +356,15 @@ fun StockScreen(
             }
         )
     }
+
+    if (showCategoryDialog) {
+        CategoryDialog(
+            categories = categoryList,
+            onAddCategory = onAddCategory,
+            onDeleteCategory = onDeleteCategory,
+            onDismiss = { showCategoryDialog = false }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -399,7 +433,7 @@ fun SelectableProductCard(
                 )
                 // Harga di posisi paling kanan
                 Text(
-                    text = "Rp. ${String.format("%,.0f", product.price)}",
+                    text = "Rp ${java.text.NumberFormat.getInstance(java.util.Locale("id", "ID")).format(product.price)}",
                     style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF124D1C),
                     fontSize = 24.sp,
@@ -417,4 +451,112 @@ fun SelectableProductCard(
             Icon(Icons.Default.Edit, contentDescription = "edit icon")
         }
     }
+}
+
+@Composable
+fun CategoryDialog(
+    categories: List<CategoryEntity>,
+    onAddCategory: (String) -> Unit,
+    onDeleteCategory: (CategoryEntity) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var newCategoryName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = newCategoryName,
+                        onValueChange = { newCategoryName = it },
+                        placeholder = { Text("Type here...") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Button(
+                        onClick = {
+                            if (newCategoryName.isNotBlank()) {
+                                onAddCategory(newCategoryName.trim())
+                                newCategoryName = ""
+                            }
+                        },
+                        modifier = Modifier.size(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1DB954) // Warna hijau sesuai gambar
+                        ),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Tambah Kategori",
+                            tint = Color.White
+                        )
+                    }
+                }
+                Text(
+                    text = "Category",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(categories) { category ->
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = category.name,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+
+                                IconButton(
+                                    onClick = { onDeleteCategory(category) }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Hapus Kategori",
+                                        tint = Color.Red
+                                    )
+                                }
+                            }
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                thickness = 1.dp
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Tutup")
+            }
+        }
+    )
 }

@@ -3,8 +3,10 @@ package com.example.pos_app.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pos_app.data.local.AppDatabase
-import com.example.pos_app.data.local.ProductEntity
+import com.example.pos_app.data.entity.CategoryEntity
+import com.example.pos_app.data.localDb.AppDatabase
+import com.example.pos_app.data.entity.ProductEntity
+import com.example.pos_app.data.repository.CategoryRepository
 import com.example.pos_app.data.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,10 +16,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 class PosViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: ProductRepository
+    private val categoryRepository =
+        CategoryRepository(AppDatabase.getDatabase(application).categoryDao())
 
     init {
         val productDao = AppDatabase.getDatabase(application).productDao()
@@ -30,6 +33,28 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    // State untuk daftar kategori
+    val categories: StateFlow<List<CategoryEntity>> = categoryRepository.allCategories
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    // Fungsi untuk menambah kategori baru
+    fun insertCategory(name: String) {
+        viewModelScope.launch {
+            categoryRepository.insertCategory(CategoryEntity(name = name))
+        }
+    }
+
+    // Fungsi untuk menghapus kategori
+    fun deleteCategory(category: CategoryEntity) {
+        viewModelScope.launch {
+            categoryRepository.deleteCategory(category)
+        }
+    }
 
     val totalProfit: StateFlow<Double> = products.map { list ->
         list.sumOf { (it.price - it.buyPrice) * it.quantity }
@@ -74,21 +99,19 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
-    fun addProduct(name: String, price: Double, buyPrice: Double, quantity: Int, category: String, imageUrl: String?) {
+    fun addProduct(name: String, buyPrice: Double, price: Double, quantity: Int, category: String, imageUrl: String?) {
         if (name.isBlank() || price <= 0 || quantity < 0) return // Validasi sederhana
 
         viewModelScope.launch {
-            repository.insert(
-                ProductEntity(
-                    name = name,
-                    price = price,
-                    buyPrice = buyPrice,
-                    quantity = quantity,
-                    category = category,
-                    imageUrl = imageUrl,
-                    expiredDate = null
-                )
+            val product = ProductEntity(
+                name = name,
+                buyPrice = buyPrice,
+                price = price,
+                quantity = quantity,
+                category = category,
+                imageUrl = imageUrl
             )
+            repository.insert(product)
         }
     }
 

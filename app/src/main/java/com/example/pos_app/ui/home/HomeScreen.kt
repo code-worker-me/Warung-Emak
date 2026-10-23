@@ -44,7 +44,14 @@ fun HomeScreen(
                     Text(text = "Total Estimasi Profit", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Rp. ${String.format("%,.0f", totalProfit)}",
+                        text = "Rp ${
+                            java.text.NumberFormat.getInstance(
+                                java.util.Locale(
+                                    "id",
+                                    "ID"
+                                )
+                            ).format(totalProfit)
+                        }",
                         style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )

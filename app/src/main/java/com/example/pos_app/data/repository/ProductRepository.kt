@@ -1,7 +1,7 @@
 package com.example.pos_app.data.repository
 
-import com.example.pos_app.data.local.ProductDao
-import com.example.pos_app.data.local.ProductEntity
+import com.example.pos_app.data.Dao.ProductDao
+import com.example.pos_app.data.entity.ProductEntity
 import kotlinx.coroutines.flow.Flow
 
 class ProductRepository(private val productDao: ProductDao) {

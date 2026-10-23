@@ -1,4 +1,4 @@
-package com.example.pos_app.data.local
+package com.example.pos_app.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -12,5 +12,5 @@ data class ProductEntity(
     val buyPrice: Double,
     val quantity: Int,
     val category: String,
-    val expiredDate: String?
+    val expiredDate: String? = null
 )

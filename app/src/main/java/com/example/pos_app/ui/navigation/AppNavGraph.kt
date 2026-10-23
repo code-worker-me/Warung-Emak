@@ -25,6 +25,7 @@ sealed class Screen(val route: String) {
 fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val products by viewModel.products.collectAsState()
+    val categoryList by viewModel.categories.collectAsState()
     val totalProfit by viewModel.totalProfit.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredProducts by viewModel.filteredProducts.collectAsState()
@@ -43,6 +44,7 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
         composable(Screen.Stock.route) {
             StockScreen(
                 productList = filteredProducts,
+                categoryList = categoryList,
                 searchQuery = searchQuery,
                 onSearchQueryChanged = { viewModel.setSearchQuery(it) },
                 onSortSelected = { order -> viewModel.setSortOrder(order) },
@@ -54,11 +56,15 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
                 },
                 onDeleteBatch = { idsList ->
                     viewModel.deleteProduct(idsList)
-                }
+                },
+                onAddCategory = { name -> viewModel.insertCategory(name) },
+                onDeleteCategory = { category -> viewModel.deleteCategory(category) }
             )
         }
         composable("add_product") {
+            val categoryList by viewModel.categories.collectAsState()
             AddProductScreen(
+                categoryList = categoryList,
                 onBackClicked = { navController.popBackStack() },
             ) { name, price, buyPrice, quantity, category, imageUri ->
                 // Panggil logika dari ViewModel
@@ -68,9 +74,11 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
         }
         composable("edit_product") {
             val productToEdit = viewModel.selectedProduct.collectAsState().value
+            val categoryList by viewModel.categories.collectAsState()
             if (productToEdit != null) {
                 EditProductScreen(
                     product = productToEdit,
+                    categoryList = categoryList,
                     onBackClicked = { navController.popBackStack() },
                     onUpdateProduct = { updatedProduct ->
                         viewModel.updateProduct(updatedProduct)

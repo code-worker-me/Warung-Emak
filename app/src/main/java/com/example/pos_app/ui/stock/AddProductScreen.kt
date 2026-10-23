@@ -37,7 +37,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TopAppBar
+import com.example.pos_app.data.entity.CategoryEntity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +56,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,6 +68,7 @@ import java.io.FileOutputStream
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddProductScreen(
+    categoryList: List<CategoryEntity>,
     onBackClicked: () -> Unit,
     onSaveProduct: (name: String, price: Double, buyPrice: Double, quantity: Int, category: String, imageUri: String?) -> Unit
 ) {
@@ -80,7 +84,6 @@ fun AddProductScreen(
     val focusRequesterBuyPrice = remember { FocusRequester() }
     val focusRequesterStock = remember { FocusRequester() }
     val focusRequesterCategory = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
 
     // Launcher untuk Galeri
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -233,17 +236,47 @@ fun AddProductScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("Kategori") },
+                var expanded by remember { mutableStateOf(false) }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
                     modifier = Modifier.weight(1f)
-                        .focusRequester(focusRequesterCategory),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
+                ) {
+                    OutlinedTextField(
+                        value = category,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Kategori") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                            .focusRequester(focusRequesterCategory),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        if (categoryList.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("Belum ada kategori") },
+                                onClick = { expanded = false }
+                            )
+                        } else {
+                            categoryList.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(cat.name) },
+                                    onClick = {
+                                        category = cat.name
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
