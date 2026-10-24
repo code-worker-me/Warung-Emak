@@ -240,7 +240,6 @@ fun StockScreen(
                             contentDescription = "Pengaturan Kategori"
                         )
                     }
-                    Spacer(Modifier.width(10.dp))
                     // LazyRow Kategori (diberi weight(1f) agar mengambil ruang fleksibel di kiri)
                     LazyRow(
                         modifier = Modifier.weight(1f),
@@ -469,7 +468,7 @@ fun CategoryDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -515,7 +514,7 @@ fun CategoryDialog(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
+                        .height(350.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(categories) { category ->
@@ -524,8 +523,7 @@ fun CategoryDialog(
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
+                                    .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

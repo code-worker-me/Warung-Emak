@@ -58,6 +58,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -165,7 +166,10 @@ fun AddProductScreen(
                 onValueChange = { name = it },
                 label = { Text("Nama Produk") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next,
+                    capitalization = KeyboardCapitalization.Words
+                ),
                 keyboardActions = KeyboardActions(onNext = { focusRequesterBuyPrice.requestFocus() }),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
@@ -186,7 +190,11 @@ fun AddProductScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequesterBuyPrice),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next,
+                    capitalization = KeyboardCapitalization.Words
+                ),
                 keyboardActions = KeyboardActions(onNext = { focusRequesterPrice.requestFocus() }),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
@@ -212,7 +220,9 @@ fun AddProductScreen(
                     .focusRequester(focusRequesterPrice),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next),
+                    imeAction = ImeAction.Next,
+                    capitalization = KeyboardCapitalization.Words
+                ),
                 keyboardActions = KeyboardActions(onNext = { focusRequesterStock.requestFocus() }),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
