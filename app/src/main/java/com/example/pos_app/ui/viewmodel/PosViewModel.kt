@@ -1,30 +1,70 @@
 package com.example.pos_app.ui.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pos_app.data.entity.CategoryEntity
-import com.example.pos_app.data.localDb.AppDatabase
-import com.example.pos_app.data.entity.ProductEntity
+import com.example.pos_app.data.local.entity.CategoryEntity
+import com.example.pos_app.data.local.entity.ProductEntity
+import com.example.pos_app.data.local.entity.TransactionEntity
 import com.example.pos_app.data.repository.CategoryRepository
 import com.example.pos_app.data.repository.ProductRepository
+import com.example.pos_app.data.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class PosViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: ProductRepository
-    private val categoryRepository =
-        CategoryRepository(AppDatabase.getDatabase(application).categoryDao())
+class PosViewModel(
+    private val repository: ProductRepository,
+    private val categoryRepository: CategoryRepository,
+    private val transactionRepository: TransactionRepository
+) : ViewModel() {
 
     init {
-        val productDao = AppDatabase.getDatabase(application).productDao()
-        repository = ProductRepository(productDao)
+        viewModelScope.launch {
+            if (transactionRepository.allTransactions.first().isEmpty()) {
+                val sampleTitles = listOf(
+                    "Penjualan Produk POS",
+                    "Transfer to Adebayo (UBA)",
+                    "Exchange to GHS",
+                    "Card Top-up",
+                    "Deposit via Debit Card (Visa)",
+                    "Card Payment (Netflix)",
+                    "Pembayaran Suplier",
+                    "Restock Barang",
+                    "Penjualan Grosir",
+                    "Withdrawal ATM"
+                )
+                val times = listOf("3:12 PM", "2:12 PM", "1:30 PM", "11:15 AM", "10:00 AM", "8:30 AM")
+
+                for (i in 1..100) {
+                    val title = sampleTitles.random()
+                    val dateGroup = when {
+                        i <= 15 -> "Today"
+                        i <= 35 -> "Yesterday"
+                        i <= 65 -> "2 days ago"
+                        else -> "Last Week"
+                    }
+                    val timestamp = times.random()
+                    val amount = Math.random() * 950000 + 50000
+                    val isIncome = i % 2 == 0 || i % 3 == 0
+
+                    transactionRepository.insert(
+                        TransactionEntity(
+                            title = "$title #$i",
+                            timestamp = timestamp,
+                            dateGroup = dateGroup,
+                            amount = amount,
+                            isIncome = isIncome
+                        )
+                    )
+                }
+            }
+        }
     }
 
     val products: StateFlow<List<ProductEntity>> = repository.allProducts
@@ -34,7 +74,6 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = emptyList()
         )
 
-    // State untuk daftar kategori
     val categories: StateFlow<List<CategoryEntity>> = categoryRepository.allCategories
         .stateIn(
             scope = viewModelScope,
@@ -42,14 +81,19 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = emptyList()
         )
 
-    // Fungsi untuk menambah kategori baru
+    val transactions: StateFlow<List<TransactionEntity>> = transactionRepository.allTransactions
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     fun insertCategory(name: String) {
         viewModelScope.launch {
             categoryRepository.insertCategory(CategoryEntity(name = name))
         }
     }
 
-    // Fungsi untuk menghapus kategori
     fun deleteCategory(category: CategoryEntity) {
         viewModelScope.launch {
             categoryRepository.deleteCategory(category)
@@ -100,7 +144,7 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     fun addProduct(name: String, buyPrice: Double, price: Double, quantity: Int, category: String, imageUrl: String?) {
-        if (name.isBlank() || price <= 0 || quantity < 0) return // Validasi sederhana
+        if (name.isBlank() || price <= 0 || quantity < 0) return
 
         viewModelScope.launch {
             val product = ProductEntity(

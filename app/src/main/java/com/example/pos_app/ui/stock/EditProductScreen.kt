@@ -39,7 +39,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TopAppBar
-import com.example.pos_app.data.entity.CategoryEntity
+import com.example.pos_app.data.local.entity.CategoryEntity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,7 +58,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.pos_app.data.entity.ProductEntity
+import com.example.pos_app.data.local.entity.ProductEntity
 import java.text.NumberFormat
 import java.util.Locale
 

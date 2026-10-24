@@ -67,8 +67,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.pos_app.R
-import com.example.pos_app.data.entity.CategoryEntity
-import com.example.pos_app.data.entity.ProductEntity
+import com.example.pos_app.data.local.entity.CategoryEntity
+import com.example.pos_app.data.local.entity.ProductEntity
 import com.example.pos_app.ui.viewmodel.PosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

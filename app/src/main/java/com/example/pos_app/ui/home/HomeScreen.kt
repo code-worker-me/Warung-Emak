@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.dp
 fun HomeScreen(
     totalProfit: Double,
     onNavigateToCashier: () -> Unit,
-    onNavigateToStock: () -> Unit
+    onNavigateToStock: () -> Unit,
+    onNavigateToTransactionHistory: () -> Unit
 ) {
     Scaffold { paddingValues ->
         Column(
@@ -46,10 +47,7 @@ fun HomeScreen(
                     Text(
                         text = "Rp ${
                             java.text.NumberFormat.getInstance(
-                                java.util.Locale(
-                                    "id",
-                                    "ID"
-                                )
+                                java.util.Locale.forLanguageTag("id-ID")
                             ).format(totalProfit)
                         }",
                         style = MaterialTheme.typography.headlineLarge,
@@ -69,6 +67,13 @@ fun HomeScreen(
                 OutlinedButton(onClick = onNavigateToStock, modifier = Modifier.weight(1f)) {
                     Text("Atur Stok")
                 }
+            }
+
+            OutlinedButton(
+                onClick = onNavigateToTransactionHistory,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Riwayat Transaksi")
             }
         }
     }

@@ -13,33 +13,48 @@ import com.example.pos_app.ui.home.HomeScreen
 import com.example.pos_app.ui.stock.AddProductScreen
 import com.example.pos_app.ui.stock.EditProductScreen
 import com.example.pos_app.ui.stock.StockScreen
+import com.example.pos_app.ui.transaction.TransactionHistoryScreen
+import com.example.pos_app.ui.viewmodel.AppViewModelProvider
 import com.example.pos_app.ui.viewmodel.PosViewModel
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Cashier : Screen("cashier")
     object Stock : Screen("stock")
+    object TransactionHistory : Screen("transaction_history")
 }
 
 @Composable
-fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modifier) {
+fun AppNavGraph(
+    viewModel: PosViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    modifier: Modifier = Modifier
+) {
     val navController = rememberNavController()
-    val products by viewModel.products.collectAsState()
     val categoryList by viewModel.categories.collectAsState()
     val totalProfit by viewModel.totalProfit.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredProducts by viewModel.filteredProducts.collectAsState()
+    val transactions by viewModel.transactions.collectAsState()
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) {
             HomeScreen(
                 totalProfit = totalProfit,
                 onNavigateToCashier = { navController.navigate(Screen.Cashier.route) },
-                onNavigateToStock = { navController.navigate(Screen.Stock.route) }
+                onNavigateToStock = { navController.navigate(Screen.Stock.route) },
+                onNavigateToTransactionHistory = { navController.navigate(Screen.TransactionHistory.route) }
             )
         }
         composable(Screen.Cashier.route) {
-            CashierScreen(productList = products)
+            CashierScreen(
+                onBackClicked = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.TransactionHistory.route) {
+            TransactionHistoryScreen(
+                transactions = transactions,
+                onBackClicked = { navController.popBackStack() }
+            )
         }
         composable(Screen.Stock.route) {
             StockScreen(
@@ -67,9 +82,8 @@ fun AppNavGraph(viewModel: PosViewModel = viewModel(), modifier: Modifier = Modi
                 categoryList = categoryList,
                 onBackClicked = { navController.popBackStack() },
             ) { name, price, buyPrice, quantity, category, imageUri ->
-                // Panggil logika dari ViewModel
-                viewModel.addProduct(name, price, buyPrice, quantity, category, imageUri)
-                navController.popBackStack() // Kembali ke halaman stock setelah disimpan
+                viewModel.addProduct(name, buyPrice, price, quantity, category, imageUri)
+                navController.popBackStack()
             }
         }
         composable("edit_product") {
